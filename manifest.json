@@ -2,7 +2,7 @@
   "name": "Corinna Setter Dashboard",
   "short_name": "Setter",
   "description": "Dashboard per setter Instagram",
-  "start_url": "/",
+  "start_url": "/CorySetter/",
   "display": "standalone",
   "background_color": "#F5EFE6",
   "theme_color": "#6B4C35",
