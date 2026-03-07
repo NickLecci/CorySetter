@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Corinna · Setter Dashboard</title>
+<meta name="theme-color" content="#6B4C35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Setter">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --beige: #F5EFE6;
+    --beige-mid: #EDE3D6;
+    --cappuccino: #C8A882;
+    --cappuccino-dark: #A0785A;
+    --brown: #6B4C35;
+    --sage: #8A9E7E;
+    --sage-light: #B8C9AF;
+    --sage-dark: #5E7254;
+    --neutral: #7A6E64;
+    --white: #FDFAF6;
+    --text: #3D2E22;
+    --text-soft: #8A7A6E;
+    --shadow: rgba(107,76,53,0.10);
+    --card: #FFFCF8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--beige);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    background: var(--brown);
+    padding: 18px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  header .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--beige); letter-spacing: 0.5px; }
+  header .logo span { color: var(--cappuccino); font-style: italic; }
+  header .subtitle { font-size: 0.7rem; color: var(--cappuccino); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 300; margin-top: 2px; }
+  .sync-indicator { font-size: 0.65rem; color: var(--cappuccino); display: flex; align-items: center; gap: 4px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage-light); flex-shrink: 0; }
+  .sync-dot.syncing { background: var(--cappuccino); animation: pulse 1s infinite; }
+  .sync-dot.ok { background: #90c67a; }
+  .sync-dot.err { background: #e07b78; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .nav-tabs { display: flex; background: var(--beige-mid); border-bottom: 1px solid var(--cappuccino); overflow-x: auto; scrollbar-width: none; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab { flex: 1; min-width: 75px; padding: 12px 6px; text-align: center; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.6px; text-transform: uppercase; color: var(--neutral); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
+  .nav-tab.active { color: var(--brown); border-bottom-color: var(--brown); background: var(--beige); }
+
+  main { padding: 16px; max-width: 480px; margin: 0 auto; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--brown); margin-bottom: 4px; }
+  .section-sub { font-size: 0.75rem; color: var(--text-soft); margin-bottom: 16px; font-weight: 300; }
+
+  .card { background: var(--card); border-radius: 14px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--beige-mid); }
+  .card-title { font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cappuccino-dark); font-weight: 500; margin-bottom: 14px; }
+
+  label { display: block; font-size: 0.75rem; color: var(--text-soft); margin-bottom: 4px; font-weight: 400; }
+  input[type="number"], input[type="date"], input[type="text"], select {
+    width: 100%; background: var(--beige); border: 1.5px solid var(--beige-mid); border-radius: 9px;
+    padding: 10px 12px; font-size: 0.9rem; font-family: 'DM Sans', sans-serif; color: var(--text);
+    margin-bottom: 12px; outline: none; transition: border 0.2s; -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--cappuccino); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn { width: 100%; padding: 13px; border-radius: 11px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px; }
+  .btn-primary { background: var(--brown); color: var(--beige); }
+  .btn-primary:active { background: var(--cappuccino-dark); }
+  .btn-primary:disabled { background: var(--neutral); opacity: 0.6; cursor: not-allowed; }
+  .btn-danger { background: transparent; border: 1.5px solid #c9756a; color: #c9756a; font-size: 0.78rem; padding: 8px; width: auto; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; }
+  .btn-edit { background: transparent; border: 1.5px solid var(--cappuccino-dark); color: var(--cappuccino-dark); font-size: 0.78rem; padding: 8px 10px; width: auto; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.2s; }
+  .btn-edit:active { background: var(--beige-mid); }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat-chip { background: var(--card); border-radius: 12px; padding: 14px 12px; box-shadow: 0 2px 8px var(--shadow); border: 1px solid var(--beige-mid); }
+  .stat-chip .val { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--brown); line-height: 1; }
+  .stat-chip .val.green { color: var(--sage-dark); }
+  .stat-chip .lbl { font-size: 0.68rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+  .stat-chip .pct { font-size: 0.75rem; color: var(--cappuccino-dark); font-weight: 500; margin-top: 2px; }
+
+  .chart-wrap { position: relative; height: 200px; margin-top: 6px; }
+
+  .pt-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--beige); border-radius: 10px; margin-bottom: 8px; border: 1.5px solid var(--beige-mid); }
+  .pt-item .pt-name { font-weight: 500; font-size: 0.9rem; }
+  .pt-item .pt-actions { display: flex; gap: 8px; align-items: center; }
+  .pt-color-dot { width: 14px; height: 14px; border-radius: 50%; margin-right: 10px; flex-shrink: 0; }
+  .pt-left { display: flex; align-items: center; }
+
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip { flex-shrink: 0; padding: 7px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: 1.5px solid var(--beige-mid); background: var(--card); color: var(--neutral); transition: all 0.2s; }
+  .filter-chip.active { background: var(--brown); color: var(--beige); border-color: var(--brown); }
+
+  .period-row { display: flex; gap: 6px; margin-bottom: 14px; }
+  .period-btn { flex: 1; padding: 8px 4px; border-radius: 8px; font-size: 0.72rem; font-weight: 500; cursor: pointer; border: 1.5px solid var(--beige-mid); background: var(--card); color: var(--neutral); text-align: center; transition: all 0.2s; }
+  .period-btn.active { background: var(--sage); color: white; border-color: var(--sage); }
+
+  .inline-add { display: flex; gap: 8px; margin-bottom: 8px; }
+  .inline-add input { flex: 1; margin-bottom: 0; }
+
+  .log-entry { background: var(--beige); border-radius: 9px; padding: 10px 12px; margin-bottom: 6px; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--beige-mid); }
+  .log-entry .log-date { color: var(--text-soft); font-size: 0.72rem; }
+  .log-entry .log-vals { display: flex; gap: 12px; }
+  .log-val { text-align: center; }
+  .log-val .v { font-weight: 500; color: var(--brown); }
+  .log-val .k { font-size: 0.65rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.5px; }
+  .log-actions { display: flex; flex-direction: column; gap: 5px; margin-left: 8px; flex-shrink: 0; }
+  .log-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 2px 4px; border-radius: 6px; transition: background 0.15s; }
+  .log-btn:active { background: var(--beige-mid); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .empty { text-align: center; padding: 30px 20px; color: var(--text-soft); font-size: 0.85rem; }
+  .empty-icon { font-size: 2rem; margin-bottom: 8px; }
+
+  /* LOADING OVERLAY */
+  .loading-overlay { position: fixed; inset: 0; background: var(--beige); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; transition: opacity 0.4s; }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .loading-logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--brown); }
+  .loading-logo span { color: var(--cappuccino); font-style: italic; }
+  .loading-spinner { width: 28px; height: 28px; border: 3px solid var(--beige-mid); border-top-color: var(--cappuccino); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .loading-msg { font-size: 0.78rem; color: var(--text-soft); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(61,46,34,0.45); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-box { background: var(--card); border-radius: 20px 20px 0 0; padding: 24px 20px 32px; width: 100%; max-width: 480px; box-shadow: 0 -4px 30px rgba(0,0,0,0.15); animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--brown); }
+  .modal-close { width: 30px; height: 30px; border-radius: 50%; background: var(--beige-mid); border: none; cursor: pointer; font-size: 1rem; color: var(--neutral); display: flex; align-items: center; justify-content: center; }
+  .color-swatches-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px; }
+  .color-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2.5px solid transparent; transition: transform 0.15s, border-color 0.15s; flex-shrink: 0; }
+  .color-swatch:active { transform: scale(0.9); }
+  .color-swatch.selected { border-color: var(--brown); transform: scale(1.15); }
+  .edit-dot-preview-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  #edit-dot-preview { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--beige-mid); transition: background 0.2s; }
+  .or-divider { font-size: 0.7rem; color: var(--text-soft); text-align: center; margin: 6px 0 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .select-wrap { position: relative; }
+  .select-wrap::after { content: '▾'; position: absolute; right: 12px; top: 50%; transform: translateY(-60%); color: var(--neutral); pointer-events: none; font-size: 0.8rem; }
+
+  /* RECORD CARDS */
+  .record-card { background: var(--card); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--beige-mid); display: flex; align-items: center; gap: 14px; position: relative; overflow: hidden; }
+  .record-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--record-accent, var(--cappuccino)); border-radius: 4px 0 0 4px; }
+  .record-icon { font-size: 1.6rem; flex-shrink: 0; width: 40px; text-align: center; }
+  .record-body { flex: 1; min-width: 0; }
+  .record-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-soft); margin-bottom: 2px; }
+  .record-value { font-family: 'Playfair Display', serif; font-size: 1.9rem; color: var(--brown); line-height: 1; }
+  .record-pt { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 0.78rem; color: var(--text-soft); }
+  .record-pt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .record-date { font-size: 0.7rem; color: var(--cappuccino-dark); font-weight: 500; flex-shrink: 0; text-align: right; }
+  .record-empty { text-align: center; padding: 40px 20px; color: var(--text-soft); font-size: 0.85rem; }
+
+  /* PAYMENT STYLES */
+  .pay-card { background: var(--beige); border-radius: 12px; padding: 14px; margin-bottom: 10px; border: 1.5px solid var(--beige-mid); }
+  .pay-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .pay-cliente-name { font-weight: 600; font-size: 0.9rem; }
+  .pay-pt-badge { font-size: 0.68rem; color: var(--text-soft); display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+  .pay-right { text-align: right; }
+  .pay-importo { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--brown); }
+  .pay-commissione { font-size: 0.7rem; color: var(--sage-dark); font-weight: 500; }
+  .pay-actions { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; }
+  .rate-row { display: flex; flex-direction: column; gap: 6px; }
+  .rata-item { background: var(--card); border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--beige-mid); gap: 8px; }
+  .rata-left { min-width: 0; }
+  .rata-label { font-size: 0.72rem; color: var(--text-soft); }
+  .rata-importo { font-size: 0.85rem; font-weight: 500; color: var(--brown); }
+  .rata-stati { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+  .stato-btn { padding: 4px 7px; border-radius: 6px; font-size: 0.6rem; font-weight: 600; cursor: pointer; border: 1.5px solid; transition: all 0.15s; white-space: nowrap; line-height: 1.3; text-align: center; }
+  .stato-btn.cliente-no  { border-color: #e0b77a; color: #a07030; background: #fdf3e3; }
+  .stato-btn.cliente-yes { border-color: #8A9E7E; color: #5E7254; background: #eef4eb; }
+  .stato-btn.corinna-no  { border-color: #c9a0dc; color: #7a4a9a; background: #f5eefb; }
+  .stato-btn.corinna-yes { border-color: #6AACCB; color: #2a6a8a; background: #e8f4fa; }
+  .rata-preview-box { background: var(--beige); border: 1px dashed var(--cappuccino); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 0.78rem; color: var(--text-soft); }
+  .pay-filter-row { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
+  .pay-filter-row::-webkit-scrollbar { display: none; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--brown); color: var(--beige); padding: 12px 22px; border-radius: 20px; font-size: 0.82rem; z-index: 999; transition: transform 0.3s ease; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-logo">Corinna <span>Setter</span></div>
+  <div class="loading-spinner"></div>
+  <div class="loading-msg" id="loading-msg">Connessione al cloud…</div>
+</div>
+
+<header>
+  <div>
+    <div class="logo">Corinna <span>Setter</span></div>
+    <div class="subtitle">Instagram · Booking Dashboard</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:1.2rem">☕</div>
+    <div class="sync-indicator">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
+  <div class="nav-tab" onclick="showPage('record')">🏆 Record</div>
+  <div class="nav-tab" onclick="showPage('insert')">Inserisci</div>
+  <div class="nav-tab" onclick="showPage('pagamenti')">💶</div>
+  <div class="nav-tab" onclick="showPage('grafici')">📊</div>
+  <div class="nav-tab" onclick="showPage('log')">Storico</div>
+  <div class="nav-tab" onclick="showPage('settings')">Trainer</div>
+</div>
+
+<main>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <br>
+  <div class="section-title" id="greeting-title"></div>
+  <div class="section-sub" id="today-date-label"></div>
+  <div class="period-row" style="margin-bottom:12px">
+    <div class="period-btn" onclick="setDashPeriod('day', this)">Oggi</div>
+    <div class="period-btn" onclick="setDashPeriod('month', this)" id="dash-month-btn">Mese</div>
+    <div class="period-btn" onclick="setDashPeriod('year', this)">Anno</div>
+    <div class="period-btn active" onclick="setDashPeriod('all', this)">Sempre</div>
+  </div>
+  <div class="filter-row" id="dash-filter-row">
+    <div class="filter-chip active" onclick="setDashFilter('all', this)">Tutti</div>
+  </div>
+  <div class="stats-grid" id="dash-stats"></div>
+  <div class="card">
+    <div class="card-title">Tasso di conversione</div>
+    <div class="chart-wrap"><canvas id="convChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title" id="recent-chart-title">Ultime 7 sessioni — Chat aperte</div>
+    <div class="chart-wrap"><canvas id="recentChart"></canvas></div>
+  </div>
+</div>
+
+<!-- RECORD -->
+<div class="page" id="page-record">
+  <br>
+  <div class="section-title">Record 🏆</div>
+  <div class="section-sub">I migliori risultati nel periodo selezionato</div>
+  <div class="period-row" style="margin-bottom:16px">
+    <div class="period-btn active" onclick="setRecordPeriod('day', this)">Oggi</div>
+    <div class="period-btn" onclick="setRecordPeriod('month', this)">Mese</div>
+    <div class="period-btn" onclick="setRecordPeriod('year', this)">Anno</div>
+    <div class="period-btn" onclick="setRecordPeriod('all', this)">Sempre</div>
+  </div>
+  <div id="records-list"></div>
+</div>
+
+<!-- INSERISCI -->
+<div class="page" id="page-insert">
+  <br>
+  <div class="section-title">Nuova sessione</div>
+  <div class="section-sub">Inserisci i dati giornalieri</div>
+  <div class="card">
+    <div class="card-title">Dettagli</div>
+    <label>Data</label>
+    <input type="date" id="inp-date">
+    <label>Personal Trainer</label>
+    <div class="select-wrap"><select id="inp-pt"></select></div>
+    <div class="form-row">
+      <div><label>💬 Chat aperte</label><input type="number" id="inp-chat" min="0" placeholder="0"></div>
+      <div><label>✅ Risposte ricevute</label><input type="number" id="inp-risposte" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div><label>📩 Richieste in entrata</label><input type="number" id="inp-richieste" min="0" placeholder="0"></div>
+      <div><label>📅 Consulenze fissate</label><input type="number" id="inp-consulenze" min="0" placeholder="0"></div>
+    </div>
+    <button class="btn btn-primary" id="save-btn" onclick="saveEntry()">Salva sessione</button>
+  </div>
+</div>
+
+<!-- PAGAMENTI -->
+<div class="page" id="page-pagamenti">
+  <br>
+  <div class="section-title">Pagamenti 💶</div>
+  <div class="section-sub">Contratti e commissioni al 10%</div>
+
+  <div class="stats-grid" id="pay-stats"></div>
+
+  <div class="card">
+    <div class="card-title">Nuovo contratto</div>
+    <label>Nome cliente</label>
+    <input type="text" id="pay-cliente" placeholder="Es. Mario Bianchi">
+    <label>Personal Trainer</label>
+    <div class="select-wrap"><select id="pay-pt"></select></div>
+    <div class="form-row">
+      <div>
+        <label>💰 Importo totale (€)</label>
+        <input type="number" id="pay-importo" min="0" placeholder="0" oninput="renderRatePreview()">
+      </div>
+      <div>
+        <label>📋 Rate</label>
+        <div class="select-wrap">
+          <select id="pay-rate" onchange="renderRatePreview()">
+            <option value="1">1 — Unico</option>
+            <option value="2">2 rate</option>
+            <option value="3">3 rate</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="rate-preview"></div>
+    <button class="btn btn-primary" id="pay-save-btn" onclick="saveContratto()">Salva contratto</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Storico contratti</div>
+    <div class="pay-filter-row" id="pay-filter-row">
+      <div class="filter-chip active" onclick="setPayFilter('all', this)">Tutti</div>
+    </div>
+    <div id="pay-list"></div>
+  </div>
+</div>
+
+<!-- GRAFICI -->
+<div class="page" id="page-grafici">
+  <br>
+  <div class="section-title">Grafici</div>
+  <div class="section-sub">Andamento nel tempo</div>
+  <div class="filter-row" id="graf-filter-row">
+    <div class="filter-chip active" onclick="setGrafFilter('all', this)">Tutti</div>
+  </div>
+  <div class="period-row">
+    <div class="period-btn active" onclick="setPeriod(7, this)">7g</div>
+    <div class="period-btn" onclick="setPeriod(14, this)">14g</div>
+    <div class="period-btn" onclick="setPeriod(30, this)">30g</div>
+    <div class="period-btn" onclick="setPeriod(0, this)">Tutto</div>
+  </div>
+  <div class="card"><div class="card-title">Chat aperte nel tempo</div><div class="chart-wrap" style="height:220px"><canvas id="chatChart"></canvas></div></div>
+  <div class="card"><div class="card-title">Consulenze fissate nel tempo</div><div class="chart-wrap" style="height:220px"><canvas id="consulChart"></canvas></div></div>
+  <div class="card"><div class="card-title">Tasso di risposta % nel tempo</div><div class="chart-wrap" style="height:220px"><canvas id="ratioChart"></canvas></div></div>
+  <div class="card"><div class="card-title">Confronto metriche (media)</div><div class="chart-wrap" style="height:220px"><canvas id="barChart"></canvas></div></div>
+</div>
+
+<!-- PAGAMENTI -->
+<div class="page" id="page-pagamenti">
+  <br>
+  <div class="section-title">Pagamenti 💶</div>
+  <div class="section-sub">Traccia contratti e commissioni</div>
+
+  <!-- RIEPILOGO -->
+  <div class="stats-grid" id="pay-stats"></div>
+
+  <!-- NUOVO CONTRATTO -->
+  <div class="card">
+    <div class="card-title">Nuovo contratto</div>
+    <label>Nome cliente</label>
+    <input type="text" id="pay-cliente" placeholder="Es. Mario Bianchi">
+    <label>Personal Trainer</label>
+    <div class="select-wrap"><select id="pay-pt"></select></div>
+    <div class="form-row">
+      <div>
+        <label>💰 Importo totale (€)</label>
+        <input type="number" id="pay-importo" min="0" placeholder="0">
+      </div>
+      <div>
+        <label>📋 Numero rate</label>
+        <div class="select-wrap">
+          <select id="pay-rate" onchange="renderRatePreview()">
+            <option value="1">1 — Unico</option>
+            <option value="2">2 rate</option>
+            <option value="3">3 rate</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="rate-preview"></div>
+    <button class="btn btn-primary" onclick="saveContratto()">Salva contratto</button>
+  </div>
+
+  <!-- STORICO CONTRATTI -->
+  <div class="card">
+    <div class="card-title">Storico contratti</div>
+    <div class="filter-row" id="pay-filter-row">
+      <div class="filter-chip active" onclick="setPayFilter('all', this)">Tutti</div>
+    </div>
+    <div id="pay-list"></div>
+  </div>
+</div>
+
+<!-- LOG -->
+<div class="page" id="page-log">
+  <br>
+  <div class="section-title">Storico</div>
+  <div class="section-sub">Tutte le sessioni registrate</div>
+  <div class="filter-row" id="log-filter-row">
+    <div class="filter-chip active" onclick="setLogFilter('all', this)">Tutti</div>
+  </div>
+  <div id="log-list"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <br>
+  <div class="section-title">Personal Trainer</div>
+  <div class="section-sub">Gestisci i profili seguiti</div>
+  <div class="card">
+    <div class="card-title">Aggiungi nuovo PT</div>
+    <div class="inline-add">
+      <input type="text" id="new-pt-name" placeholder="Nome PT..." style="margin-bottom:0">
+      <button class="btn btn-primary" onclick="addPT()" style="width:auto;padding:10px 16px">+ Aggiungi</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Lista PT attivi</div>
+    <div id="pt-list-ui"></div>
+  </div>
+</div>
+
+</main>
+
+<!-- EDIT SESSIONE MODAL -->
+<div class="modal-overlay" id="session-edit-modal" onclick="if(event.target===this)closeSessionModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Modifica sessione</div>
+      <button class="modal-close" onclick="closeSessionModal()">✕</button>
+    </div>
+    <label>Data</label>
+    <input type="date" id="edit-sess-date">
+    <label>Personal Trainer</label>
+    <div class="select-wrap"><select id="edit-sess-pt"></select></div>
+    <div class="form-row">
+      <div><label>💬 Chat aperte</label><input type="number" id="edit-sess-chat" min="0"></div>
+      <div><label>✅ Risposte</label><input type="number" id="edit-sess-risposte" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div><label>📩 Richieste</label><input type="number" id="edit-sess-richieste" min="0"></div>
+      <div><label>📅 Consulenze</label><input type="number" id="edit-sess-consulenze" min="0"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveSessionEdit()">Salva modifiche</button>
+  </div>
+</div>
+
+<!-- EDIT PT MODAL -->
+<div class="modal-overlay" id="pt-edit-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Modifica Personal Trainer</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <label>Nome</label>
+    <div class="edit-dot-preview-wrap">
+      <div id="edit-dot-preview"></div>
+      <input type="text" id="edit-pt-name" placeholder="Nome PT..." style="margin-bottom:0;flex:1">
+    </div>
+    <label>Colore</label>
+    <div class="color-swatches-wrap" id="color-swatches"></div>
+    <div class="or-divider">oppure scegli colore personalizzato</div>
+    <input type="color" id="edit-pt-color-input" style="width:100%;height:44px;border-radius:9px;border:1.5px solid var(--beige-mid);cursor:pointer;background:var(--beige);margin-bottom:16px;padding:4px 8px"
+      oninput="document.getElementById('edit-dot-preview').style.background=this.value; document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'))">
+    <button class="btn btn-primary" onclick="saveEditPT()">Salva modifiche</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ SUPABASE CONFIG ============
+const SUPABASE_URL = 'https://ucjxvkcqsdiwxeobfdeh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_P3W038odUfN-xiXkZg8TfA_wAajyGMS';
+
+const headers = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`
+};
+
+async function sbGet(table, params = '') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbPost(table, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST', headers: { ...headers, 'Prefer': 'return=representation' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbPatch(table, id, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH', headers: { ...headers, 'Prefer': 'return=representation' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbDelete(table, id) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'DELETE', headers
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ============ STATE ============
+let data = [];   // sessioni
+let pts = [];    // personal trainers [{id, name, color}]
+let dashFilter = 'all', grafFilter = 'all', logFilter = 'all', grafPeriod = 7, dashPeriod = 'all';
+let editingPTIndex = null;
+let convChartInst, recentChartInst, chatChartInst, consulChartInst, ratioChartInst, barChartInst;
+
+const DEFAULT_COLORS = ['#A0785A','#8A9E7E','#C8A882','#6B4C35','#B8C9AF','#D4A574','#7A9B6E','#C4956A','#5E7254','#E8C99A'];
+
+// ============ SYNC STATUS ============
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot';
+  if (status === 'syncing') { dot.classList.add('syncing'); lbl.textContent = 'Sync…'; }
+  else if (status === 'ok')  { dot.classList.add('ok');      lbl.textContent = 'Online'; }
+  else                       { dot.classList.add('err');     lbl.textContent = 'Offline'; }
+}
+
+// ============ INIT ============
+async function init() {
+  setSyncStatus('syncing');
+  document.getElementById('loading-msg').textContent = 'Caricamento dati…';
+  try {
+    pts = await sbGet('personal_trainers', 'order=created_at.asc');
+    data = await sbGet('sessioni', 'order=date.asc');
+    pagamenti = await sbGet('contratti', 'order=created_at.asc');
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('err');
+    showToast('⚠ Errore connessione');
+    console.error(e);
+  }
+
+  const hour = new Date().getHours();
+  let greeting;
+  if (hour >= 5 && hour < 13)       greeting = 'Buongiorno, Corinna ✨';
+  else if (hour >= 13 && hour < 19) greeting = 'Buon pomeriggio, Corinna ☀️';
+  else                               greeting = 'Buonasera, Corinna 🌙';
+  document.getElementById('greeting-title').textContent = greeting;
+  document.getElementById('today-date-label').textContent = new Date().toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  document.getElementById('inp-date').value = todayStr();
+
+  refreshAllPTUI();
+  renderDashboard();
+  renderLog();
+  renderGrafici();
+
+  // Hide loading
+  setTimeout(() => document.getElementById('loading-overlay').classList.add('hidden'), 300);
+}
+
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+// ============ PT ============
+function ptColor(name) {
+  const pt = pts.find(p => p.name === name);
+  return pt ? pt.color : '#999';
+}
+
+async function addPT() {
+  const name = document.getElementById('new-pt-name').value.trim();
+  if (!name) return;
+  if (pts.find(p => p.name === name)) { showToast('PT già presente'); return; }
+  const usedColors = pts.map(p => p.color);
+  const color = DEFAULT_COLORS.find(c => !usedColors.includes(c)) || DEFAULT_COLORS[pts.length % DEFAULT_COLORS.length];
+  setSyncStatus('syncing');
+  try {
+    const [newPT] = await sbPost('personal_trainers', { name, color });
+    pts.push(newPT);
+    document.getElementById('new-pt-name').value = '';
+    refreshAllPTUI();
+    setSyncStatus('ok');
+    showToast('✓ PT aggiunto');
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore salvataggio'); }
+}
+
+async function deletePT(idx) {
+  const pt = pts[idx];
+  if (!confirm(`Eliminare ${pt.name}? I dati rimarranno nello storico.`)) return;
+  setSyncStatus('syncing');
+  try {
+    await sbDelete('personal_trainers', pt.id);
+    pts.splice(idx, 1);
+    refreshAllPTUI();
+    setSyncStatus('ok');
+    showToast('PT eliminato');
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore eliminazione'); }
+}
+
+function openEditPT(idx) {
+  editingPTIndex = idx;
+  const pt = pts[idx];
+  document.getElementById('edit-pt-name').value = pt.name;
+  document.getElementById('edit-pt-color-input').value = pt.color;
+  document.getElementById('edit-dot-preview').style.background = pt.color;
+  renderColorSwatches(pt.color);
+  document.getElementById('pt-edit-modal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('pt-edit-modal').style.display = 'none';
+  editingPTIndex = null;
+}
+
+async function saveEditPT() {
+  if (editingPTIndex === null) return;
+  const newName = document.getElementById('edit-pt-name').value.trim();
+  const newColor = document.getElementById('edit-pt-color-input').value;
+  if (!newName) { showToast('⚠ Inserisci un nome'); return; }
+  const pt = pts[editingPTIndex];
+  const oldName = pt.name;
+  setSyncStatus('syncing');
+  try {
+    await sbPatch('personal_trainers', pt.id, { name: newName, color: newColor });
+    pts[editingPTIndex].name = newName;
+    pts[editingPTIndex].color = newColor;
+    // Update local data cache
+    data = data.map(d => d.pt_name === oldName ? { ...d, pt_name: newName } : d);
+    closeEditModal();
+    refreshAllPTUI();
+    renderDashboard();
+    renderLog();
+    setSyncStatus('ok');
+    showToast('✓ PT aggiornato');
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore aggiornamento'); }
+}
+
+function renderColorSwatches(currentColor) {
+  const SWATCHES = ['#A0785A','#8A9E7E','#C8A882','#6B4C35','#B8C9AF','#D4A574','#7A9B6E','#5E7254','#C4956A','#E8C99A','#9B7BB0','#6AACCB','#E07B78','#7BA8C4','#D4956A','#4A7B6F','#B87BA0','#8B6BAE','#5B8DB0','#CF8060'];
+  const wrap = document.getElementById('color-swatches');
+  wrap.innerHTML = SWATCHES.map(c => `
+    <div class="color-swatch ${c === currentColor ? 'selected' : ''}" style="background:${c}" onclick="selectSwatch('${c}')"></div>
+  `).join('');
+}
+
+function selectSwatch(color) {
+  document.getElementById('edit-pt-color-input').value = color;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+  event.target.classList.add('selected');
+  document.getElementById('edit-dot-preview').style.background = color;
+}
+
+function renderPTSelect() {
+  const sel = document.getElementById('inp-pt');
+  sel.innerHTML = pts.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+}
+
+function renderPTList() {
+  const el = document.getElementById('pt-list-ui');
+  if (!pts.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">👤</div>Nessun PT aggiunto</div>'; return; }
+  el.innerHTML = pts.map((p, i) => `
+    <div class="pt-item">
+      <div class="pt-left">
+        <div class="pt-color-dot" style="background:${p.color}"></div>
+        <span class="pt-name">${p.name}</span>
+      </div>
+      <div class="pt-actions">
+        <button class="btn btn-edit" onclick="openEditPT(${i})">✏ Modifica</button>
+        <button class="btn btn-danger" onclick="deletePT(${i})">Elimina</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============ FILTER ROWS ============
+function refreshAllPTUI() {
+  renderPTList();
+  renderPTSelect();
+  renderDashFilterRow();
+  renderGrafFilterRow();
+  renderLogFilterRow();
+}
+
+function renderDashFilterRow() {
+  const row = document.getElementById('dash-filter-row');
+  row.innerHTML = `<div class="filter-chip ${dashFilter==='all'?'active':''}" onclick="setDashFilter('all', this)">Tutti</div>`;
+  pts.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip' + (dashFilter===p.name?' active':'');
+    chip.textContent = p.name;
+    chip.onclick = function() { setDashFilter(p.name, this); };
+    row.appendChild(chip);
+  });
+}
+function renderGrafFilterRow() {
+  const row = document.getElementById('graf-filter-row');
+  row.innerHTML = `<div class="filter-chip ${grafFilter==='all'?'active':''}" onclick="setGrafFilter('all', this)">Tutti</div>`;
+  pts.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip' + (grafFilter===p.name?' active':'');
+    chip.textContent = p.name;
+    chip.onclick = function() { setGrafFilter(p.name, this); };
+    row.appendChild(chip);
+  });
+}
+function renderLogFilterRow() {
+  const row = document.getElementById('log-filter-row');
+  row.innerHTML = `<div class="filter-chip ${logFilter==='all'?'active':''}" onclick="setLogFilter('all', this)">Tutti</div>`;
+  pts.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip' + (logFilter===p.name?' active':'');
+    chip.textContent = p.name;
+    chip.onclick = function() { setLogFilter(p.name, this); };
+    row.appendChild(chip);
+  });
+}
+
+function setDashPeriod(p, el) {
+  dashPeriod = p;
+  document.querySelectorAll('#page-dashboard .period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Update month button label dynamically
+  const now = new Date();
+  const monthName = now.toLocaleDateString('it-IT', {month:'long'});
+  document.getElementById('dash-month-btn').textContent = dashPeriod === 'month'
+    ? monthName.charAt(0).toUpperCase() + monthName.slice(1)
+    : 'Mese';
+  renderDashboard();
+}
+
+function filteredByPeriod(arr) {
+  const now = new Date();
+  return arr.filter(d => {
+    const dd = new Date(d.date);
+    if (dashPeriod === 'day')   return d.date === todayStr();
+    if (dashPeriod === 'month') return dd.getFullYear() === now.getFullYear() && dd.getMonth() === now.getMonth();
+    if (dashPeriod === 'year')  return dd.getFullYear() === now.getFullYear();
+    return true; // 'all'
+  });
+}
+
+function setDashFilter(f, el) { dashFilter = f; document.querySelectorAll('#dash-filter-row .filter-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); renderDashboard(); }
+function setGrafFilter(f, el) { grafFilter = f; document.querySelectorAll('#graf-filter-row .filter-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); renderGrafici(); }
+function setLogFilter(f, el)  { logFilter = f; document.querySelectorAll('#log-filter-row .filter-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); renderLog(); }
+function setPeriod(p, el)     { grafPeriod = p; document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); renderGrafici(); }
+
+// ============ SAVE ENTRY ============
+async function saveEntry() {
+  const btn = document.getElementById('save-btn');
+  const ptName = document.getElementById('inp-pt').value;
+  const ptObj = pts.find(p => p.name === ptName);
+  const entry = {
+    date: document.getElementById('inp-date').value,
+    pt_id: ptObj ? ptObj.id : null,
+    pt_name: ptName,
+    chat: parseInt(document.getElementById('inp-chat').value) || 0,
+    risposte: parseInt(document.getElementById('inp-risposte').value) || 0,
+    richieste: parseInt(document.getElementById('inp-richieste').value) || 0,
+    consulenze: parseInt(document.getElementById('inp-consulenze').value) || 0,
+  };
+  if (!entry.date || !entry.pt_name) { showToast('⚠ Inserisci data e PT'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Salvataggio…';
+  setSyncStatus('syncing');
+  try {
+    const [saved] = await sbPost('sessioni', entry);
+    data.push(saved);
+    ['inp-chat','inp-risposte','inp-richieste','inp-consulenze'].forEach(id => document.getElementById(id).value = '');
+    setSyncStatus('ok');
+    showToast('✓ Sessione salvata!');
+    renderDashboard();
+    renderGrafici();
+    renderLog();
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore salvataggio'); console.error(e); }
+  btn.disabled = false;
+  btn.textContent = 'Salva sessione';
+}
+
+// ============ FILTER DATA ============
+function filteredData(filter) {
+  if (filter === 'all') return data;
+  return data.filter(d => d.pt_name === filter);
+}
+function periodData(filter, days) {
+  let fd = filteredData(filter);
+  if (days === 0) return fd;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return fd.filter(d => new Date(d.date) >= cutoff);
+}
+function sum(arr, key) { return arr.reduce((a,b) => a+(b[key]||0), 0); }
+function avg(arr, key) { return arr.length ? sum(arr,key)/arr.length : 0; }
+
+// ============ DASHBOARD ============
+function renderDashboard() {
+  const fd = filteredByPeriod(filteredData(dashFilter));
+  const total_chat = sum(fd,'chat'), total_risp = sum(fd,'risposte'), total_rich = sum(fd,'richieste'), total_cons = sum(fd,'consulenze');
+  const tasso = total_chat > 0 ? ((total_risp/total_chat)*100).toFixed(1) : '—';
+  const conv = total_risp > 0 ? ((total_cons/total_risp)*100).toFixed(1) : '—';
+
+  // Update recent chart title based on period
+  const chartTitleMap = { day:'Oggi — Chat aperte', month:'Questo mese — Chat aperte', year:'Quest\'anno — Chat aperte', all:'Ultime 7 sessioni — Chat aperte' };
+  document.getElementById('recent-chart-title').textContent = chartTitleMap[dashPeriod] || 'Chat aperte';
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-chip"><div class="val">${total_chat}</div><div class="lbl">Chat Aperte</div><div class="pct">totale</div></div>
+    <div class="stat-chip"><div class="val">${tasso}%</div><div class="lbl">Tasso risposta</div><div class="pct">${total_risp} su ${total_chat}</div></div>
+    <div class="stat-chip"><div class="val">${total_rich}</div><div class="lbl">Richieste in entrata</div><div class="pct">totale</div></div>
+    <div class="stat-chip"><div class="val green">${total_cons}</div><div class="lbl">Consulenze fissate</div><div class="pct">conversione ${conv}%</div></div>`;
+
+  if (convChartInst) convChartInst.destroy();
+  convChartInst = new Chart(document.getElementById('convChart').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: ['Conversione %','Rimanente'], datasets: [{ data: [parseFloat(conv)||0, Math.max(0,100-(parseFloat(conv)||0))], backgroundColor: ['#8A9E7E','#EDE3D6'], borderWidth: 0, cutout: '70%' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+
+  if (recentChartInst) recentChartInst.destroy();
+  const recent = [...fd].sort((a,b)=>a.date.localeCompare(b.date)).slice(-7);
+  recentChartInst = new Chart(document.getElementById('recentChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: recent.map(d=>{const p=d.date.split('-');return`${p[2]}/${p[1]}`;}), datasets: [
+      { label:'Chat aperte', data: recent.map(d=>d.chat), backgroundColor:'#C8A882', borderRadius:6, borderSkipped:false },
+      { label:'Consulenze', data: recent.map(d=>d.consulenze), backgroundColor:'#8A9E7E', borderRadius:6, borderSkipped:false }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{font:{size:10},color:'#7A6E64'}}}, scales:{x:{ticks:{font:{size:10},color:'#7A6E64'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#7A6E64'},grid:{color:'#EDE3D6'},beginAtZero:true}} }
+  });
+}
+
+// ============ GRAFICI ============
+function renderGrafici() {
+  const fd = periodData(grafFilter, grafPeriod);
+  const sorted = [...fd].sort((a,b)=>a.date.localeCompare(b.date));
+  const labels = sorted.map(d=>{const p=d.date.split('-');return`${p[2]}/${p[1]}`;});
+  const cd = { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{font:{size:10},color:'#7A6E64'}}}, scales:{x:{ticks:{font:{size:10},color:'#7A6E64'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#7A6E64'},grid:{color:'#EDE3D6'},beginAtZero:true}} };
+
+  if (chatChartInst) chatChartInst.destroy();
+  chatChartInst = new Chart(document.getElementById('chatChart').getContext('2d'), { type:'line', data:{labels,datasets:[{label:'Chat aperte',data:sorted.map(d=>d.chat),borderColor:'#A0785A',backgroundColor:'rgba(160,120,90,0.1)',fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:'#A0785A'}]}, options:{...cd} });
+
+  if (consulChartInst) consulChartInst.destroy();
+  consulChartInst = new Chart(document.getElementById('consulChart').getContext('2d'), { type:'line', data:{labels,datasets:[{label:'Consulenze fissate',data:sorted.map(d=>d.consulenze),borderColor:'#8A9E7E',backgroundColor:'rgba(138,158,126,0.1)',fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:'#8A9E7E'}]}, options:{...cd} });
+
+  if (ratioChartInst) ratioChartInst.destroy();
+  ratioChartInst = new Chart(document.getElementById('ratioChart').getContext('2d'), { type:'line', data:{labels,datasets:[{label:'Tasso risposta %',data:sorted.map(d=>d.chat>0?+((d.risposte/d.chat*100).toFixed(1)):0),borderColor:'#C8A882',backgroundColor:'rgba(200,168,130,0.1)',fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:'#C8A882'}]}, options:{...cd,scales:{...cd.scales,y:{...cd.scales.y,max:100,ticks:{callback:v=>v+'%',font:{size:10},color:'#7A6E64'}}}} });
+
+  if (barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(document.getElementById('barChart').getContext('2d'), { type:'bar', data:{labels:['Chat aperte','Risposte','Richieste','Consulenze'],datasets:[{label:'Media per sessione',data:[avg(fd,'chat'),avg(fd,'risposte'),avg(fd,'richieste'),avg(fd,'consulenze')].map(v=>+v.toFixed(1)),backgroundColor:['#C8A882','#8A9E7E','#A0785A','#5E7254'],borderRadius:8,borderSkipped:false}]}, options:{...cd,plugins:{legend:{display:false}}} });
+}
+
+// ============ LOG ============
+function renderLog() {
+  const fd = filteredData(logFilter);
+  const sorted = [...fd].sort((a,b)=>b.date.localeCompare(a.date));
+  const el = document.getElementById('log-list');
+  if (!sorted.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📋</div>Nessuna sessione registrata</div>'; return; }
+  el.innerHTML = sorted.map(d => {
+    const tasso = d.chat>0 ? (d.risposte/d.chat*100).toFixed(0)+'%' : '—';
+    const parts = d.date.split('-');
+    return `<div class="log-entry">
+      <div>
+        <div style="font-weight:500;font-size:0.82rem;margin-bottom:2px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${ptColor(d.pt_name)};display:inline-block;margin-right:5px"></span>${d.pt_name}
+        </div>
+        <div class="log-date">${parts[2]}/${parts[1]}/${parts[0]}</div>
+      </div>
+      <div class="log-vals">
+        <div class="log-val"><div class="v">${d.chat}</div><div class="k">Chat</div></div>
+        <div class="log-val"><div class="v">${tasso}</div><div class="k">Risp%</div></div>
+        <div class="log-val"><div class="v">${d.richieste}</div><div class="k">Rich</div></div>
+        <div class="log-val"><div class="v" style="color:#5E7254">${d.consulenze}</div><div class="k">Consul</div></div>
+      </div>
+      <div class="log-actions">
+        <button class="log-btn" title="Modifica" onclick="openSessionEdit('${d.id}')">✏️</button>
+        <button class="log-btn" title="Elimina" onclick="deleteSession('${d.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============ EDIT / DELETE SESSIONE ============
+let editingSessionId = null;
+
+function openSessionEdit(id) {
+  const d = data.find(s => s.id === id);
+  if (!d) return;
+  editingSessionId = id;
+  document.getElementById('edit-sess-date').value = d.date;
+  document.getElementById('edit-sess-chat').value = d.chat;
+  document.getElementById('edit-sess-risposte').value = d.risposte;
+  document.getElementById('edit-sess-richieste').value = d.richieste;
+  document.getElementById('edit-sess-consulenze').value = d.consulenze;
+  // Populate PT select
+  const sel = document.getElementById('edit-sess-pt');
+  sel.innerHTML = pts.map(p => `<option value="${p.name}" ${p.name===d.pt_name?'selected':''}>${p.name}</option>`).join('');
+  document.getElementById('session-edit-modal').style.display = 'flex';
+}
+
+function closeSessionModal() {
+  document.getElementById('session-edit-modal').style.display = 'none';
+  editingSessionId = null;
+}
+
+async function saveSessionEdit() {
+  if (!editingSessionId) return;
+  const ptName = document.getElementById('edit-sess-pt').value;
+  const ptObj = pts.find(p => p.name === ptName);
+  const updates = {
+    date: document.getElementById('edit-sess-date').value,
+    pt_id: ptObj ? ptObj.id : null,
+    pt_name: ptName,
+    chat: parseInt(document.getElementById('edit-sess-chat').value) || 0,
+    risposte: parseInt(document.getElementById('edit-sess-risposte').value) || 0,
+    richieste: parseInt(document.getElementById('edit-sess-richieste').value) || 0,
+    consulenze: parseInt(document.getElementById('edit-sess-consulenze').value) || 0,
+  };
+  setSyncStatus('syncing');
+  try {
+    await sbPatch('sessioni', editingSessionId, updates);
+    const idx = data.findIndex(s => s.id === editingSessionId);
+    if (idx !== -1) data[idx] = { ...data[idx], ...updates };
+    closeSessionModal();
+    renderLog();
+    renderDashboard();
+    renderGrafici();
+    setSyncStatus('ok');
+    showToast('✓ Sessione aggiornata');
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore aggiornamento'); console.error(e); }
+}
+
+async function deleteSession(id) {
+  if (!confirm('Eliminare questa sessione?')) return;
+  setSyncStatus('syncing');
+  try {
+    await sbDelete('sessioni', id);
+    data = data.filter(s => s.id !== id);
+    renderLog();
+    renderDashboard();
+    renderGrafici();
+    setSyncStatus('ok');
+    showToast('Sessione eliminata');
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore eliminazione'); console.error(e); }
+}
+
+// ============ RECORDS ============
+let recordPeriod = 'all';
+
+function setRecordPeriod(p, el) {
+  recordPeriod = p;
+  document.querySelectorAll('#page-record .period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderRecords();
+}
+
+function getRecordData() {
+  if (recordPeriod === 'all') return data;
+  const now = new Date();
+  return data.filter(d => {
+    const dd = new Date(d.date);
+    if (recordPeriod === 'day')   return d.date === todayStr();
+    if (recordPeriod === 'month') return dd.getFullYear() === now.getFullYear() && dd.getMonth() === now.getMonth();
+    if (recordPeriod === 'year')  return dd.getFullYear() === now.getFullYear();
+    return true;
+  });
+}
+
+function periodLabel() {
+  const now = new Date();
+  if (recordPeriod === 'day')   return 'Oggi ' + now.toLocaleDateString('it-IT', {day:'numeric', month:'short'});
+  if (recordPeriod === 'month') return now.toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+  if (recordPeriod === 'year')  return now.getFullYear().toString();
+  return 'Di sempre';
+}
+
+function renderRecords() {
+  const el = document.getElementById('records-list');
+  const fd = getRecordData();
+
+  if (!fd.length) {
+    el.innerHTML = `<div class="record-empty"><div style="font-size:2.5rem;margin-bottom:10px">🏆</div>Nessun dato per questo periodo.</div>`;
+    return;
+  }
+
+  const enriched = fd.map(d => ({
+    ...d,
+    tassoRisposta: d.chat > 0 ? +(d.risposte / d.chat * 100).toFixed(1) : 0,
+    tassoConversione: d.risposte > 0 ? +(d.consulenze / d.risposte * 100).toFixed(1) : 0,
+  }));
+
+  // For monthly aggregation: group by month and sum
+  function bestMonthly(key) {
+    const byMonth = {};
+    fd.forEach(d => {
+      const mk = d.date.slice(0,7); // YYYY-MM
+      if (!byMonth[mk]) byMonth[mk] = { month: mk, total: 0, pt_name: d.pt_name };
+      byMonth[mk].total += (d[key] || 0);
+    });
+    return Object.values(byMonth).reduce((a,b) => b.total > a.total ? b : a, Object.values(byMonth)[0]);
+  }
+
+  const metrics = [
+    { key:'chat',             label:'Chat Aperte',          icon:'💬', accent:'#C8A882', suffix:'', type:'daily' },
+    { key:'tassoRisposta',    label:'Tasso di Risposta',    icon:'✅', accent:'#8A9E7E', suffix:'%', type:'daily' },
+    { key:'richieste',        label:'Richieste in Entrata', icon:'📩', accent:'#A0785A', suffix:'', type:'daily' },
+    { key:'consulenze',       label:'Consulenze Fissate',   icon:'📅', accent:'#5E7254', suffix:'', type:'daily' },
+    { key:'tassoConversione', label:'Tasso di Conversione', icon:'🎯', accent:'#6B4C35', suffix:'%', type:'daily' },
+  ];
+
+  const label = periodLabel();
+
+  el.innerHTML = `<div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-soft);margin-bottom:12px;padding-left:2px">📅 ${label}</div>` +
+  metrics.map(m => {
+    const best = enriched.reduce((a,b) => b[m.key] > a[m.key] ? b : a, enriched[0]);
+    const val = best[m.key];
+    const color = ptColor(best.pt_name);
+    const parts = best.date.split('-');
+    const dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return `<div class="record-card" style="--record-accent:${m.accent}">
+      <div class="record-icon">${m.icon}</div>
+      <div class="record-body">
+        <div class="record-label">${m.label}</div>
+        <div class="record-value">${val}${m.suffix}</div>
+        <div class="record-pt"><div class="record-pt-dot" style="background:${color}"></div><span>${best.pt_name}</span></div>
+      </div>
+      <div class="record-date">${dateStr}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============ PAGAMENTI ============
+let pagamenti = []; // contratti da Supabase
+let payFilter = 'all';
+
+function renderPayFilterRow() {
+  const row = document.getElementById('pay-filter-row');
+  row.innerHTML = `<div class="filter-chip ${payFilter==='all'?'active':''}" onclick="setPayFilter('all',this)">Tutti</div>`;
+  pts.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip' + (payFilter===p.name?' active':'');
+    chip.textContent = p.name;
+    chip.onclick = function() { setPayFilter(p.name, this); };
+    row.appendChild(chip);
+  });
+}
+
+function setPayFilter(f, el) {
+  payFilter = f;
+  document.querySelectorAll('#pay-filter-row .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderPayList();
+}
+
+function renderPayStats() {
+  const el = document.getElementById('pay-stats');
+  let totaleImporti = 0, commissTotale = 0, commissIncassata = 0, daIncassare = 0, attesaCliente = 0;
+
+  pagamenti.forEach(c => {
+    const rate = c.rate || [];
+    const nRate = rate.length;
+    const importoRata = c.importo / nRate;
+    rate.forEach(r => {
+      const comm = importoRata * 0.1;
+      if (r.cliente_pagato) {
+        commissTotale += comm;
+        if (r.corinna_incassato) commissIncassata += comm;
+        else daIncassare += comm;
+      } else {
+        attesaCliente += comm;
+      }
+      totaleImporti += importoRata;
+    });
+  });
+
+  el.innerHTML = `
+    <div class="stat-chip"><div class="val">€${commissIncassata.toFixed(0)}</div><div class="lbl">Incassato ✅</div><div class="pct">commissioni ricevute</div></div>
+    <div class="stat-chip"><div class="val" style="color:#7a4a9a">€${daIncassare.toFixed(0)}</div><div class="lbl">Da ricevere 🟣</div><div class="pct">PT deve ancora girare</div></div>
+    <div class="stat-chip"><div class="val" style="color:#a07030">€${attesaCliente.toFixed(0)}</div><div class="lbl">Attesa cliente ⏳</div><div class="pct">cliente non ha pagato</div></div>
+    <div class="stat-chip"><div class="val green">€${commissTotale.toFixed(0)}</div><div class="lbl">Totale maturato</div><div class="pct">10% su €${totaleImporti.toFixed(0)}</div></div>`;
+}
+
+function renderRatePreview() {
+  const importo = parseFloat(document.getElementById('pay-importo').value) || 0;
+  const nRate = parseInt(document.getElementById('pay-rate').value) || 1;
+  const el = document.getElementById('rate-preview');
+  if (!importo) { el.innerHTML = ''; return; }
+  const perRata = (importo / nRate).toFixed(2);
+  const comm = (importo * 0.1).toFixed(2);
+  el.innerHTML = `<div class="rata-preview-box">
+    ${nRate === 1 ? `Pagamento unico: <strong>€${importo}</strong>` : `${nRate} rate da <strong>€${perRata}</strong> cad.`}
+    &nbsp;·&nbsp; Commissione Corinna: <strong>€${comm}</strong>
+  </div>`;
+}
+
+async function saveContratto() {
+  const cliente = document.getElementById('pay-cliente').value.trim();
+  const ptName = document.getElementById('pay-pt').value;
+  const importo = parseFloat(document.getElementById('pay-importo').value);
+  const nRate = parseInt(document.getElementById('pay-rate').value) || 1;
+  if (!cliente || !ptName || !importo) { showToast('⚠ Compila tutti i campi'); return; }
+  const ptObj = pts.find(p => p.name === ptName);
+
+  // Build rate array
+  const rate = Array.from({length: nRate}, (_, i) => ({
+    numero: i + 1,
+    importo: +(importo / nRate).toFixed(2),
+    cliente_pagato: false,
+    corinna_incassato: false
+  }));
+
+  const contratto = {
+    cliente,
+    pt_name: ptName,
+    pt_id: ptObj ? ptObj.id : null,
+    importo,
+    n_rate: nRate,
+    rate: rate,
+    created_at: new Date().toISOString().split('T')[0]
+  };
+
+  const btn = document.getElementById('pay-save-btn');
+  btn.disabled = true; btn.textContent = 'Salvataggio…';
+  setSyncStatus('syncing');
+  try {
+    const [saved] = await sbPost('contratti', contratto);
+    pagamenti.push(saved);
+    document.getElementById('pay-cliente').value = '';
+    document.getElementById('pay-importo').value = '';
+    document.getElementById('pay-rate').value = '1';
+    document.getElementById('rate-preview').innerHTML = '';
+    renderPayList();
+    renderPayStats();
+    setSyncStatus('ok');
+    showToast('✓ Contratto salvato!');
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore salvataggio'); console.error(e); }
+  btn.disabled = false; btn.textContent = 'Salva contratto';
+}
+
+async function toggleRata(contrattoId, rataIdx, field) {
+  const c = pagamenti.find(p => p.id === contrattoId);
+  if (!c) return;
+  const rate = [...(c.rate || [])];
+  rate[rataIdx] = { ...rate[rataIdx], [field]: !rate[rataIdx][field] };
+  // if corinna_incassato can only be true if cliente_pagato is true
+  if (field === 'corinna_incassato' && rate[rataIdx].corinna_incassato && !rate[rataIdx].cliente_pagato) {
+    rate[rataIdx].cliente_pagato = true;
+  }
+  setSyncStatus('syncing');
+  try {
+    await sbPatch('contratti', contrattoId, { rate });
+    c.rate = rate;
+    renderPayList();
+    renderPayStats();
+    setSyncStatus('ok');
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore aggiornamento'); }
+}
+
+async function deleteContratto(id) {
+  if (!confirm('Eliminare questo contratto?')) return;
+  setSyncStatus('syncing');
+  try {
+    await sbDelete('contratti', id);
+    pagamenti = pagamenti.filter(p => p.id !== id);
+    renderPayList();
+    renderPayStats();
+    setSyncStatus('ok');
+    showToast('Contratto eliminato');
+  } catch(e) { setSyncStatus('err'); showToast('⚠ Errore eliminazione'); }
+}
+
+function renderPayList() {
+  const el = document.getElementById('pay-list');
+  const filtered = payFilter === 'all' ? pagamenti : pagamenti.filter(c => c.pt_name === payFilter);
+  const sorted = [...filtered].sort((a,b) => b.created_at?.localeCompare(a.created_at));
+
+  if (!sorted.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">💶</div>Nessun contratto ancora</div>';
+    return;
+  }
+
+  el.innerHTML = sorted.map(c => {
+    const rate = c.rate || [];
+    const comm = (c.importo * 0.1).toFixed(2);
+    const color = ptColor(c.pt_name);
+
+    const rateHTML = rate.map((r, i) => {
+      const clienteClass = r.cliente_pagato ? 'cliente-yes' : 'cliente-no';
+      const clienteLabel = r.cliente_pagato ? '👤 Pagato' : '👤 Attesa';
+      const corinnaClass = r.corinna_incassato ? 'corinna-yes' : 'corinna-no';
+      const corinnaLabel = r.corinna_incassato ? '✅ Ricevuto' : '🟣 Da ricevere';
+      return `<div class="rata-item">
+        <div class="rata-left">
+          <div class="rata-label">${rate.length > 1 ? `Rata ${i+1}/${rate.length}` : 'Pagamento unico'}</div>
+          <div class="rata-importo">€${r.importo?.toFixed(2)}</div>
+        </div>
+        <div class="rata-stati">
+          <button class="stato-btn ${clienteClass}" onclick="toggleRata('${c.id}',${i},'cliente_pagato')">${clienteLabel}</button>
+          <button class="stato-btn ${corinnaClass}" onclick="toggleRata('${c.id}',${i},'corinna_incassato')">${corinnaLabel}</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="pay-card">
+      <div class="pay-card-header">
+        <div>
+          <div class="pay-cliente-name">${c.cliente}</div>
+          <div class="pay-pt-badge"><span style="width:7px;height:7px;border-radius:50%;background:${color};display:inline-block"></span>${c.pt_name}</div>
+        </div>
+        <div class="pay-right">
+          <div class="pay-importo">€${c.importo?.toFixed(2)}</div>
+          <div class="pay-commissione">Comm. €${comm}</div>
+          <div class="pay-actions">
+            <button class="btn btn-danger" style="font-size:0.7rem;padding:5px 8px" onclick="deleteContratto('${c.id}')">🗑 Elimina</button>
+          </div>
+        </div>
+      </div>
+      <div class="rate-row">${rateHTML}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============ NAV ============
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if (name==='dashboard') renderDashboard();
+  if (name==='record') renderRecords();
+  if (name==='grafici') renderGrafici();
+  if (name==='log') renderLog();
+  if (name==='insert') renderPTSelect();
+  if (name==='settings') renderPTList();
+  if (name==='pagamenti') {
+    renderPayFilterRow();
+    renderPayStats();
+    renderPayList();
+    // populate pt select
+    document.getElementById('pay-pt').innerHTML = pts.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  }
+}
+
+// ============ TOAST ============
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ============ START ============
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+init();
+</script>
+</body>
+</html>
